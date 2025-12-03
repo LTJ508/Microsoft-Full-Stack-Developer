@@ -2,7 +2,7 @@ using System;
 
 public class Program
 {
-    public static voide Main()
+    public static void Main()
     {
         Console.WriteLine("Enter your age: ");
         int age = Convert.ToInt32(Console.ReadLine());
