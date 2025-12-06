@@ -3,3 +3,4 @@ using System.Drawing;
 using Pastel;
 
 Console.WriteLine("Hello, World!".Pastel(Color.LightGreen));
+Console.ReadLine();
