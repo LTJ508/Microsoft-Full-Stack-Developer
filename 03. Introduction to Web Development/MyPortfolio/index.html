@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Portfolio of Joy Kumar Ghosh – CSE Graduate, Backend Developer, Quantum Computing & AI Researcher" />
+  <title>Joy Kumar Ghosh | Portfolio</title>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header>
+  <nav role="navigation" class="navbar">
+    <h1 class="logo">Joy Kumar Ghosh</h1>
+    <button class="hamburger" aria-label="Toggle menu" onclick="toggleMenu()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <ul id="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#education">Education</a></li>
+      <li><a href="#experience">Experience</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#publications">Publications</a></li>
+      <li><a href="#certifications">Certifications</a></li>
+      <li><a href="#achievements">Achievements</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li><a href="Joy Kumar Ghosh.pdf" download class="download-btn">Download Resume</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+
+<section id="about" class="fade-in">
+  <h2>About Me</h2>
+  <div class="about-content">
+    <p>
+      I am <strong>Joy Kumar Ghosh</strong>, a Computer Science graduate from <strong>North South University</strong>
+      with a CGPA of <strong>3.77/4.00</strong>. I have strong foundations in software engineering, backend systems,
+      databases, machine learning, and quantum computing research.
+    </p>
+    <p>
+      I have professional experience as an <strong>Oracle APEX Web Application Developer Intern</strong> at
+      <strong>MySoft Limited</strong> (Aug 2025 – Nov 2025), working on enterprise-scale backend systems.
+    </p>
+    <p>
+      My research interests include: <span id="typing-text" class="highlight"></span><span class="cursor">|</span>
+    </p>
+  </div>
+</section>
+
+<section id="education">
+  <h2>Education</h2>
+  <ul>
+    <li><strong>BSc in Computer Science & Engineering</strong> — North South University (2022–2025) — CGPA: 3.77 / 4.00</li>
+    <li><strong>HSC (Science)</strong> — Birshreshtha Munshi Abdur Rouf Public College — GPA: 4.33 / 5.00</li>
+    <li><strong>SSC (Science)</strong> — Jadunath Pilot Model School & College — GPA: 5.00 / 5.00</li>
+  </ul>
+</section>
+
+<section id="experience">
+  <h2>Work Experience</h2>
+  <article>
+    <h3>Oracle APEX Web Application Developer — Intern</h3>
+    <p><strong>MySoft Limited</strong>, Dhaka (Aug 2025 – Nov 2025)</p>
+    <p>Worked on enterprise Oracle APEX backend systems and database-driven applications.</p>
+  </article>
+</section>
+
+<section id="skills">
+  <h2>Technical Skills</h2>
+
+  <h3>Programming Languages</h3>
+  <ul class="skills-list">
+    <li>C</li>
+    <li>C++</li>
+    <li>C#</li>
+    <li>Java</li>
+    <li>Python</li>
+    <li>SQL</li>
+    <li>PL/SQL</li>
+  </ul>
+
+  <h3>Frameworks & Platforms</h3>
+  <ul class="skills-list">
+    <li>Oracle APEX</li>
+    <li>Django</li>
+    <li>Oracle Cloud (OCI)</li>
+    <li>Jasper Reports</li>
+    <li>HTML</li>
+    <li>CSS</li>
+  </ul>
+
+  <h3>Databases</h3>
+  <ul class="skills-list">
+    <li>Oracle ORDBMS</li>
+    <li>MySQL</li>
+    <li>MongoDB</li>
+  </ul>
+
+  <h3>Tools</h3>
+  <ul class="skills-list">
+    <li>Git</li>
+    <li>VS Code</li>
+    <li>SQL Developer</li>
+    <li>Toad</li>
+  </ul>
+
+  <h3>Core Competencies</h3>
+  <ul class="skills-list">
+    <li>Software Design & Debugging</li>
+    <li>Backend Development</li>
+    <li>Database Design & Optimization</li>
+    <li>Machine Learning Pipelines</li>
+    <li>Research & Technical Writing</li>
+  </ul>
+</section>
+
+<section id="certifications" class="fade-in">
+  <h2>Certifications</h2>
+  
+  <div class="filter-buttons">
+    <button onclick="filterCertifications('all')">All</button>
+    <button onclick="filterCertifications('duke')">Duke University</button>
+    <button onclick="filterCertifications('kaist')">KAIST</button>
+    <button onclick="filterCertifications('oracle')">Oracle</button>
+    <button onclick="filterCertifications('3dots')">3dots Service Systems</button>
+    <button onclick="filterCertifications('aicerts')">AI CERTs™</button>
+  </div>
+
+  <div class="cert-grid">
+    <div class="cert-card" data-provider="duke">
+      <div class="cert-icon">🎓</div>
+      <h3>Explainable AI (XAI)</h3>
+      <p>Duke University</p>
+      <a href="https://coursera.org/verify/specialization/HAA1J5OZI9A3" target="_blank" rel="noopener noreferrer" class="cert-link">Verify Certificate →</a>
+    </div>
+    
+    <div class="cert-card" data-provider="kaist">
+      <div class="cert-icon">🔬</div>
+      <h3>Introduction to Quantum Information</h3>
+      <p>KAIST</p>
+      <a href="https://coursera.org/verify/RGV5HPT9FPOQ" target="_blank" rel="noopener noreferrer" class="cert-link">Verify Certificate →</a>
+    </div>
+    
+    <div class="cert-card" data-provider="oracle">
+      <div class="cert-icon">☁️</div>
+      <h3>Oracle Cloud and AI</h3>
+      <p>Oracle</p>
+      <a href="https://coursera.org/verify/specialization/ZNELDTHD02EQ" target="_blank" rel="noopener noreferrer" class="cert-link">Verify Certificate →</a>
+    </div>
+    
+    <div class="cert-card" data-provider="oracle">
+      <div class="cert-icon">🤖</div>
+      <h3>Oracle Cloud Infrastructure AI Foundations Associate</h3>
+      <p>Oracle</p>
+      <a href="https://catalog-education.oracle.com/pls/certview/sharebadge?id=CD1712309705EC509A09F217700CD3D73D8796EDA0908BA05ABA154AEDADA3AA" target="_blank" rel="noopener noreferrer" class="cert-link">View Certificate →</a>
+    </div>
+    
+    <div class="cert-card" data-provider="3dots">
+      <div class="cert-icon">💻</div>
+      <h3>Oracle APEX Application Development</h3>
+      <p>3dots Service Systems</p>
+      <a href="https://3dotsss.com/mod/customcert/verify_certificate.php?code=4p5ieSBQRk&qrcode=1&contextid=851" target="_blank" rel="noopener noreferrer" class="cert-link">View Certificate →</a>
+    </div>
+    
+    <div class="cert-card" data-provider="3dots">
+      <div class="cert-icon">🗄️</div>
+      <h3>Advanced Database Practice using Oracle ORDBMS and MongoDB</h3>
+      <p>3dots Service Systems</p>
+      <a href="https://3dotsss.com/mod/customcert/verify_certificate.php?code=JlknC7lPwD&qrcode=1&contextid=849" target="_blank" rel="noopener noreferrer" class="cert-link">View Certificate →</a>
+    </div>
+    
+    <div class="cert-card" data-provider="aicerts">
+      <div class="cert-icon">🧠</div>
+      <h3>AI+ Foundation</h3>
+      <p>AI CERTs™</p>
+      <a href="https://verify.certs365.io/?=1341f389024b" target="_blank" rel="noopener noreferrer" class="cert-link">View Certificate →</a>
+    </div>
+    
+    <div class="cert-card" data-provider="aicerts">
+      <div class="cert-icon">✨</div>
+      <h3>AI+ Prompt Engineer</h3>
+      <p>AI CERTs™</p>
+      <a href="https://verify.certs365.io/?=0651f9001b2a" target="_blank" rel="noopener noreferrer" class="cert-link">View Certificate →</a>
+    </div>
+  </div>
+</section>
+
+<section id="projects">
+  <h2>Projects</h2>
+
+  <div class="filter-buttons">
+    <button onclick="filterProjects('all')">All</button>
+    <button onclick="filterProjects('ml')">ML</button>
+    <button onclick="filterProjects('system')">Systems</button>
+    <button onclick="filterProjects('compiler')">Compiler</button>
+  </div>
+
+  <div class="project-grid">
+
+    <article class="project-card" data-category="system">
+      <div class="project-icon">🏥</div>
+      <h3>Outpatients Appointment System</h3>
+      <p>Oracle APEX based hospital appointment system with real-time scheduling and patient management.</p>
+      <div class="project-tech">Oracle APEX | PL/SQL | Database Design</div>
+      <a href="http://oracleapex.com/ords/r/joy634343/opd-appointment-system/" target="_blank" rel="noopener noreferrer" class="project-link">View Project →</a>
+    </article>
+
+    <article class="project-card" data-category="system">
+      <div class="project-icon">🏨</div>
+      <h3>Nationwide Hospital & Patient Management System</h3>
+      <p>Large-scale healthcare system with comprehensive patient records, appointment scheduling, and billing.</p>
+      <div class="project-tech">MySQL | PHP | Web Development</div>
+      <a href="https://github.com/LTJ508/Centralized-Hospital-Management-System-Using-MySQL" target="_blank" rel="noopener noreferrer" class="project-link">View Project →</a>
+    </article>
+
+    <article class="project-card" data-category="compiler">
+      <div class="project-icon">🔤</div>
+      <h3>Bangla Programming Language</h3>
+      <p>Custom compiler for Bangla programming language with lexical analysis, parsing, and code generation.</p>
+      <div class="project-tech">ANTLR | C++ | Compiler Design</div>
+      <a href="https://github.com/LTJ508/Bangla_Programing_Language" target="_blank" rel="noopener noreferrer" class="project-link">View Project →</a>
+    </article>
+
+    <article class="project-card" data-category="system">
+      <div class="project-icon">📦</div>
+      <h3>Inventory Management & Billing System</h3>
+      <p>Desktop application for inventory tracking, sales management, and automated billing with reporting.</p>
+      <div class="project-tech">Java Swing | SQL | Desktop App</div>
+      <a href="https://github.com/LTJ508/Inventory-Management-and-Billing-System-JAVA" target="_blank" rel="noopener noreferrer" class="project-link">View Project →</a>
+    </article>
+
+    <article class="project-card" data-category="system">
+      <div class="project-icon">📓</div>
+      <h3>Diary Management System</h3>
+      <p>Console-based personal diary system with encryption, search functionality, and data persistence.</p>
+      <div class="project-tech">C | File Handling | Data Structures</div>
+      <a href="https://github.com/LTJ508/Diary-Management-System-C" target="_blank" rel="noopener noreferrer" class="project-link">View Project →</a>
+    </article>
+
+    <article class="project-card" data-category="ml">
+      <div class="project-icon">🍅</div>
+      <h3>Tomato Leaf Disease Detection</h3>
+      <p>Machine learning model for agricultural disease detection using CNN with LIME explainability framework.</p>
+      <div class="project-tech">Python | TensorFlow | CNN | LIME</div>
+      <a href="https://github.com/LTJ508/CNN_Model" target="_blank" rel="noopener noreferrer" class="project-link">View Project →</a>
+    </article>
+
+  </div>
+</section>
+
+<section id="publications">
+  <h2>Publications</h2>
+  <ul>
+    <li><strong>Enhanced Selection Mechanism for Combined Quantum Key Distribution Protocol</strong> — Under Review (2025)</li>
+    <li><strong>Modern C++ Library for Quantum Circuit Simulation: State Vector Simulator</strong> — Under Review (2025)</li>
+    <li><strong>Machine Learning Based Weather Prediction of Dhaka City</strong> — Manuscript in Preparation</li>
+  </ul>
+</section>
+
+<section id="achievements">
+  <h2>Achievements</h2>
+  <ul>
+    <li>100% Tuition Fee Waiver — North South University</li>
+    <li>Government Scholarship — JSC Result (2014)</li>
+  </ul>
+</section>
+
+<section id="contact">
+  <h2>Contact Me</h2>
+
+  <p><strong>Phone:</strong> +8801704449534</p>
+  <p><strong>Email:</strong> joydevghosh.joy.jgj@gmail.com</p>
+  <p><strong>Location:</strong> Savar, Dhaka</p>
+  <p><strong>LinkedIn:</strong> joy-kumar-ghosh</p>
+  <p><strong>ORCID:</strong> 0009-0003-5858-8572</p>
+
+  <form id="contactForm" onsubmit="return validateForm()">
+    <label for="name">Name</label>
+    <input type="text" id="name" />
+
+    <label for="email">Email</label>
+    <input type="email" id="email" />
+
+    <label for="message">Message</label>
+    <textarea id="message"></textarea>
+
+    <button type="submit">Send Message</button>
+    <p id="form-error" class="error"></p>
+  </form>
+</section>
+
+</main>
+
+<footer>
+  <p>© 2026 Joy Kumar Ghosh | CSE Graduate, Researcher & Full Stack Developer</p>
+  <div class="social-links">
+    <a href="https://github.com/LTJ508" target="_blank" rel="noopener noreferrer" aria-label="GitHub">GitHub</a>
+    <a href="https://linkedin.com/in/joy-kumar-ghosh" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">LinkedIn</a>
+    <a href="https://orcid.org/0009-0003-5858-8572" target="_blank" rel="noopener noreferrer" aria-label="ORCID">ORCID</a>
+  </div>
+</footer>
+
+<button id="scroll-to-top" aria-label="Scroll to top">↑</button>
+
+<script src="script.js"></script>
+</body>
+</html>
