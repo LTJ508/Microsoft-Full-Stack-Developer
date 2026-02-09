@@ -2,6 +2,7 @@
 @using EventEase.Models
 @using EventEase.Services
 @inject EventService EventService
+@inject UserSessionService SessionService
 @inject NavigationManager NavigationManager
 
 <PageTitle>@(selectedEvent?.Name ?? "Event Details") - EventEase</PageTitle>
@@ -123,9 +124,22 @@
 
                             @if (IsEventAvailable())
                             {
-                                <button class="btn btn-success btn-lg w-100 mb-2" @onclick="NavigateToRegistration">
-                                    <span class="bi bi-box-arrow-in-right"></span> Register Now
-                                </button>
+                                @if (isUserRegistered)
+                                {
+                                    <div class="alert alert-info mb-3">
+                                        <span class="bi bi-check-circle me-2"></span>
+                                        <strong>You're registered!</strong> View your registered events on your profile.
+                                    </div>
+                                    <a href="/my-events" class="btn btn-primary btn-lg w-100 mb-2">
+                                        <span class="bi bi-person-circle"></span> View My Events
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-success btn-lg w-100 mb-2" @onclick="NavigateToRegistration">
+                                        <span class="bi bi-box-arrow-in-right"></span> Register Now
+                                    </button>
+                                }
                             }
                             else
                             {
@@ -152,10 +166,13 @@
     private Event? selectedEvent;
     private bool isLoading = true;
     private string? errorMessage;
+    private bool isUserRegistered = false;
 
     protected override async Task OnInitializedAsync()
     {
+        await SessionService.InitializeAsync();
         await LoadEventDetails();
+        await SessionService.TrackEventViewAsync();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -164,6 +181,7 @@
         if (Id > 0)
         {
             await LoadEventDetails();
+            await SessionService.TrackEventViewAsync();
         }
     }
 
@@ -192,6 +210,12 @@
             {
                 errorMessage = "Event data is invalid or corrupted.";
                 selectedEvent = null;
+            }
+            
+            // Check if user is already registered
+            if (selectedEvent != null)
+            {
+                isUserRegistered = SessionService.IsUserRegisteredForEvent(selectedEvent.Id);
             }
         }
         catch (Exception ex)

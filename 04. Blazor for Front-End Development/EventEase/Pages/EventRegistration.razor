@@ -2,6 +2,8 @@
 @using EventEase.Models
 @using EventEase.Services
 @inject EventService EventService
+@inject UserSessionService SessionService
+@inject AttendanceTrackerService AttendanceService
 @inject NavigationManager NavigationManager
 
 <PageTitle>Register - @(selectedEvent?.Name ?? "Event") - EventEase</PageTitle>
@@ -39,8 +41,8 @@
             </div>
             <p class="confirmation-note">A confirmation email has been sent to <strong>@registrationModel.Email</strong></p>
             <div class="success-actions">
-                <a href="/events" class="btn btn-primary btn-lg">Browse More Events</a>
-                <a href="/event/@Id" class="btn btn-outline-primary btn-lg">View Event Details</a>
+                <a href="/my-events" class="btn btn-primary btn-lg">View My Events</a>
+                <a href="/events" class="btn btn-outline-primary btn-lg">Browse More Events</a>
             </div>
         </div>
     }
@@ -337,6 +339,26 @@
 
             if (success)
             {
+                // Create or update user session
+                var user = await SessionService.CreateOrUpdateUserAsync(
+                    registrationModel.FullName,
+                    registrationModel.Email,
+                    registrationModel.Phone,
+                    registrationModel.Company
+                );
+                
+                // Add event to user's registered events
+                await SessionService.AddEventRegistrationAsync(Id);
+                
+                // Create attendance record
+                await AttendanceService.CreateRegistrationAsync(
+                    Id,
+                    user.Id,
+                    user.FullName,
+                    user.Email,
+                    registrationModel.SpecialRequests
+                );
+                
                 registrationSuccess = true;
             }
             else

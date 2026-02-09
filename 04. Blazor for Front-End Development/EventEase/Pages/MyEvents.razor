@@ -1,0 +1,308 @@
+@page "/my-events"
+@using EventEase.Models
+@using EventEase.Services
+@inject UserSessionService SessionService
+@inject AttendanceTrackerService AttendanceService
+@inject EventService EventService
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<PageTitle>My Events - EventEase</PageTitle>
+
+<div class="my-events-page">
+    @if (!SessionService.IsAuthenticated)
+    {
+        <div class="welcome-section">
+            <div class="welcome-card">
+                <h2><span class="bi bi-person-circle me-2"></span>Welcome to EventEase</h2>
+                <p class="lead">Register for events to track your attendance and manage your schedule.</p>
+                <a href="/events" class="btn btn-primary btn-lg">
+                    <span class="bi bi-calendar-event me-2"></span>Browse Events
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="profile-header">
+            <div class="profile-info">
+                <div class="profile-avatar">
+                    <span class="bi bi-person-circle"></span>
+                </div>
+                <div class="profile-details">
+                    <h2>@SessionService.CurrentUser!.FullName</h2>
+                    <p class="text-muted">@SessionService.CurrentUser.Email</p>
+                    @if (!string.IsNullOrEmpty(SessionService.CurrentUser.Company))
+                    {
+                        <p class="company"><span class="bi bi-building me-1"></span>@SessionService.CurrentUser.Company</p>
+                    }
+                </div>
+            </div>
+            <div class="profile-actions">
+                <button class="btn btn-outline-danger" @onclick="HandleLogout">
+                    <span class="bi bi-box-arrow-right me-2"></span>Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="session-stats">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <span class="bi bi-calendar-check"></span>
+                </div>
+                <div class="stat-info">
+                    <h3>@registeredEvents.Count</h3>
+                    <p>Registered Events</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <span class="bi bi-eye"></span>
+                </div>
+                <div class="stat-info">
+                    <h3>@SessionService.CurrentSession.EventsViewed</h3>
+                    <p>Events Viewed</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <span class="bi bi-clock-history"></span>
+                </div>
+                <div class="stat-info">
+                    <h3>@GetSessionDuration()</h3>
+                    <p>Session Duration</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <span class="bi bi-check-circle"></span>
+                </div>
+                <div class="stat-info">
+                    <h3>@attendedCount</h3>
+                    <p>Events Attended</p>
+                </div>
+            </div>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="loading-section">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p>Loading your events...</p>
+            </div>
+        }
+        else if (!registeredEvents.Any())
+        {
+            <div class="empty-state">
+                <span class="bi bi-calendar-x"></span>
+                <h3>No Registered Events</h3>
+                <p>You haven't registered for any events yet.</p>
+                <a href="/events" class="btn btn-primary">Browse Events</a>
+            </div>
+        }
+        else
+        {
+            <div class="events-section">
+                <h3>My Registered Events</h3>
+                
+                <div class="events-tabs">
+                    <button class="tab-btn @(activeTab == "upcoming" ? "active" : "")" @onclick='() => SetTab("upcoming")'>
+                        Upcoming (@upcomingEvents.Count)
+                    </button>
+                    <button class="tab-btn @(activeTab == "past" ? "active" : "")" @onclick='() => SetTab("past")'>
+                        Past (@pastEvents.Count)
+                    </button>
+                </div>
+
+                <div class="events-list">
+                    @foreach (var evt in GetDisplayedEvents())
+                    {
+                        var registration = userRegistrations.FirstOrDefault(r => r.EventId == evt.Id);
+                        
+                        <div class="registered-event-card">
+                            <div class="event-card-content">
+                                <div class="event-main-info">
+                                    <h4>@evt.Name</h4>
+                                    <div class="event-meta">
+                                        <span><span class="bi bi-calendar-event me-1"></span>@evt.Date.ToString("MMM dd, yyyy")</span>
+                                        <span><span class="bi bi-clock me-1"></span>@evt.Date.ToString("h:mm tt")</span>
+                                        <span><span class="bi bi-geo-alt me-1"></span>@evt.Location</span>
+                                    </div>
+                                    
+                                    @if (registration != null)
+                                    {
+                                        <div class="registration-info">
+                                            <span class="badge @GetStatusBadgeClass(registration.Status)">
+                                                @registration.Status
+                                            </span>
+                                            <small class="text-muted">
+                                                Registered on @registration.RegistrationDate.ToString("MMM dd, yyyy")
+                                            </small>
+                                            @if (registration.CheckedIn && registration.CheckInTime.HasValue)
+                                            {
+                                                <small class="text-success">
+                                                    <span class="bi bi-check-circle me-1"></span>
+                                                    Checked in at @registration.CheckInTime.Value.ToString("h:mm tt")
+                                                </small>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                                
+                                <div class="event-actions">
+                                    <a href="/event/@evt.Id" class="btn btn-sm btn-outline-primary">
+                                        <span class="bi bi-info-circle me-1"></span>Details
+                                    </a>
+                                    
+                                    @if (!evt.IsPastEvent() && registration?.Status == Models.RegistrationStatus.Confirmed)
+                                    {
+                                        @if (!registration.CheckedIn)
+                                        {
+                                            <button class="btn btn-sm btn-success" @onclick="() => CheckIn(evt.Id)">
+                                                <span class="bi bi-check-circle me-1"></span>Check In
+                                            </button>
+                                        }
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => CancelRegistration(evt.Id)">
+                                            <span class="bi bi-x-circle me-1"></span>Cancel
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<Event> registeredEvents = new();
+    private List<Event> upcomingEvents = new();
+    private List<Event> pastEvents = new();
+    private List<Models.EventRegistration> userRegistrations = new();
+    private bool isLoading = true;
+    private string activeTab = "upcoming";
+    private int attendedCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        SessionService.OnSessionChanged += OnSessionChanged;
+        AttendanceService.OnAttendanceChanged += OnAttendanceChanged;
+        
+        await SessionService.InitializeAsync();
+        await LoadUserEvents();
+    }
+
+    private async Task LoadUserEvents()
+    {
+        isLoading = true;
+        
+        try
+        {
+            if (SessionService.IsAuthenticated && SessionService.CurrentUser != null)
+            {
+                var eventIds = SessionService.GetUserRegisteredEvents();
+                var allEvents = await EventService.GetEventsAsync();
+                
+                registeredEvents = allEvents.Where(e => eventIds.Contains(e.Id)).ToList();
+                
+                upcomingEvents = registeredEvents.Where(e => !e.IsPastEvent()).OrderBy(e => e.Date).ToList();
+                pastEvents = registeredEvents.Where(e => e.IsPastEvent()).OrderByDescending(e => e.Date).ToList();
+                
+                userRegistrations = await AttendanceService.GetRegistrationsByUserIdAsync(SessionService.CurrentUser.Id);
+                attendedCount = userRegistrations.Count(r => r.Status == Models.RegistrationStatus.Attended || r.CheckedIn);
+            }
+        }
+        catch (Exception)
+        {
+            // In production, use ILogger for proper error logging
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private List<Event> GetDisplayedEvents()
+    {
+        return activeTab == "upcoming" ? upcomingEvents : pastEvents;
+    }
+
+    private void SetTab(string tab)
+    {
+        activeTab = tab;
+    }
+
+    private string GetSessionDuration()
+    {
+        var duration = SessionService.GetSessionDuration();
+        if (duration.TotalHours >= 1)
+            return $"{(int)duration.TotalHours}h {duration.Minutes}m";
+        return $"{duration.Minutes}m";
+    }
+
+    private string GetStatusBadgeClass(Models.RegistrationStatus status)
+    {
+        return status switch
+        {
+            Models.RegistrationStatus.Confirmed => "bg-success",
+            Models.RegistrationStatus.Attended => "bg-primary",
+            Models.RegistrationStatus.Cancelled => "bg-danger",
+            Models.RegistrationStatus.NoShow => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    private async Task CheckIn(int eventId)
+    {
+        if (SessionService.CurrentUser != null)
+        {
+            var success = await AttendanceService.CheckInAsync(eventId, SessionService.CurrentUser.Id);
+            if (success)
+            {
+                await LoadUserEvents();
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task CancelRegistration(int eventId)
+    {
+        if (SessionService.CurrentUser != null)
+        {
+            var success = await AttendanceService.CancelRegistrationAsync(eventId, SessionService.CurrentUser.Id);
+            if (success)
+            {
+                await SessionService.AddEventRegistrationAsync(eventId); // Remove from user's list
+                SessionService.CurrentUser.RegisteredEventIds.Remove(eventId);
+                await LoadUserEvents();
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        await SessionService.LogoutAsync();
+        NavigationManager.NavigateTo("/");
+    }
+
+    private async void OnSessionChanged()
+    {
+        await LoadUserEvents();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void OnAttendanceChanged()
+    {
+        await LoadUserEvents();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        SessionService.OnSessionChanged -= OnSessionChanged;
+        AttendanceService.OnAttendanceChanged -= OnAttendanceChanged;
+    }
+}

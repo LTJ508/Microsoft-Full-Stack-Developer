@@ -76,10 +76,9 @@ namespace EventEase.Services
                 var eventsCopy = events.Select(e => e).ToList();
                 return Task.FromResult(eventsCopy);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Log error in production
-                Console.WriteLine($"Error retrieving events: {ex.Message}");
+                // In production, use proper logging (ILogger)
                 return Task.FromResult(new List<Event>());
             }
         }
@@ -96,10 +95,9 @@ namespace EventEase.Services
                 var evt = events.FirstOrDefault(e => e != null && e.Id == id);
                 return Task.FromResult(evt);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Log error in production
-                Console.WriteLine($"Error retrieving event {id}: {ex.Message}");
+                // In production, use proper logging (ILogger)
                 return Task.FromResult<Event?>(null);
             }
         }
@@ -165,10 +163,9 @@ namespace EventEase.Services
                 // Re-throw business logic exceptions
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Log unexpected errors
-                Console.WriteLine($"Unexpected error during registration: {ex.Message}");
+                // In production, use ILogger for proper error logging
                 return Task.FromResult(false);
             }
         }

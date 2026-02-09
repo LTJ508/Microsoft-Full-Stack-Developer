@@ -155,9 +155,9 @@
 
             ApplyFilters();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            errorMessage = $"An error occurred while loading events: {ex.Message}";
+            errorMessage = "An error occurred while loading events. Please try again.";
             events = new List<Event>();
         }
         finally
