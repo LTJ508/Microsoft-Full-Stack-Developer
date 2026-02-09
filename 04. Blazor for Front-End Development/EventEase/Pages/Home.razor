@@ -1,7 +1,75 @@
 ﻿@page "/"
+@inject NavigationManager NavigationManager
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Home - EventEase</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="home-page">
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1>Welcome to EventEase</h1>
+            <p class="lead">Your premier destination for corporate and social event management</p>
+            <p class="subtitle">Discover, register, and manage your attendance for amazing events with ease</p>
+            <div class="hero-actions">
+                <button class="btn btn-primary btn-lg" @onclick="NavigateToEvents">
+                    <span class="bi bi-calendar-event me-2"></span>Browse Events
+                </button>
+            </div>
+        </div>
+    </div>
 
-Welcome to your new app.
+    <div class="features-section">
+        <div class="container">
+            <h2 class="section-title">Why Choose EventEase?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <span class="bi bi-calendar-check"></span>
+                    </div>
+                    <h3>Easy Registration</h3>
+                    <p>Quick and seamless event registration process with instant confirmation</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <span class="bi bi-search"></span>
+                    </div>
+                    <h3>Discover Events</h3>
+                    <p>Browse a wide variety of corporate and social events tailored to your interests</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <span class="bi bi-geo-alt"></span>
+                    </div>
+                    <h3>Location Details</h3>
+                    <p>Get complete venue information and directions for all events</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <span class="bi bi-bell"></span>
+                    </div>
+                    <h3>Stay Updated</h3>
+                    <p>Receive timely notifications and reminders about your registered events</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="cta-section">
+        <div class="cta-content">
+            <h2>Ready to Get Started?</h2>
+            <p>Join thousands of attendees who trust EventEase for their event management needs</p>
+            <button class="btn btn-light btn-lg" @onclick="NavigateToEvents">
+                View All Events <span class="bi bi-arrow-right ms-2"></span>
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private void NavigateToEvents()
+    {
+        NavigationManager.NavigateTo("/events");
+    }
+}

@@ -1,0 +1,214 @@
+@page "/event/{id:int}"
+@using EventEase.Models
+@using EventEase.Services
+@inject EventService EventService
+@inject NavigationManager NavigationManager
+
+<PageTitle>@(selectedEvent?.Name ?? "Event Details") - EventEase</PageTitle>
+
+<div class="event-details-page">
+    @if (selectedEvent == null && !isLoading)
+    {
+        <div class="alert alert-danger">
+            <h4>Event Not Found</h4>
+            <p>The event you're looking for doesn't exist or has been removed.</p>
+            <a href="/events" class="btn btn-primary">Back to Events</a>
+        </div>
+    }
+    else if (isLoading)
+    {
+        <div class="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading event details...</span>
+            </div>
+            <p>Loading event details...</p>
+        </div>
+    }
+    else
+    {
+        <div class="breadcrumb-nav">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">Home</a></li>
+                    <li class="breadcrumb-item"><a href="/events">Events</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">@selectedEvent!.Name</li>
+                </ol>
+            </nav>
+        </div>
+
+        <div class="event-details-container">
+            <div class="event-details-header">
+                <div class="header-content">
+                    <h1 class="event-title">@selectedEvent.Name</h1>
+                    <div class="event-meta">
+                        <span class="badge @GetStatusBadgeClass()">
+                            @GetEventStatus()
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="event-details-body">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="details-section">
+                            <h3>About This Event</h3>
+                            <p class="event-full-description">@selectedEvent.Description</p>
+                        </div>
+
+                        <div class="details-section">
+                            <h3>Event Information</h3>
+                            <div class="info-grid">
+                                <div class="info-card">
+                                    <div class="info-icon">
+                                        <span class="bi bi-calendar-event"></span>
+                                    </div>
+                                    <div class="info-content">
+                                        <h5>Date</h5>
+                                        <p>@selectedEvent.Date.ToString("dddd, MMMM dd, yyyy")</p>
+                                    </div>
+                                </div>
+
+                                <div class="info-card">
+                                    <div class="info-icon">
+                                        <span class="bi bi-clock"></span>
+                                    </div>
+                                    <div class="info-content">
+                                        <h5>Time</h5>
+                                        <p>@selectedEvent.Date.ToString("h:mm tt")</p>
+                                    </div>
+                                </div>
+
+                                <div class="info-card">
+                                    <div class="info-icon">
+                                        <span class="bi bi-geo-alt"></span>
+                                    </div>
+                                    <div class="info-content">
+                                        <h5>Location</h5>
+                                        <p>@selectedEvent.Location</p>
+                                    </div>
+                                </div>
+
+                                <div class="info-card">
+                                    <div class="info-icon">
+                                        <span class="bi bi-people"></span>
+                                    </div>
+                                    <div class="info-content">
+                                        <h5>Capacity</h5>
+                                        <p>@selectedEvent.RegisteredAttendees / @selectedEvent.Capacity attendees</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="registration-card">
+                            <h4>Registration</h4>
+                            <div class="availability-info">
+                                <div class="progress mb-3" style="height: 25px;">
+                                    <div class="progress-bar @GetProgressBarClass()" 
+                                         role="progressbar" 
+                                         style="width: @GetCapacityPercentage()%" 
+                                         aria-valuenow="@selectedEvent.RegisteredAttendees" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="@selectedEvent.Capacity">
+                                        @GetCapacityPercentage()% Full
+                                    </div>
+                                </div>
+                                <p class="spots-remaining">
+                                    <strong>@GetAvailableSpots()</strong> spots remaining
+                                </p>
+                            </div>
+
+                            @if (IsEventAvailable())
+                            {
+                                <button class="btn btn-success btn-lg w-100 mb-2" @onclick="NavigateToRegistration">
+                                    <span class="bi bi-box-arrow-in-right"></span> Register Now
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-secondary btn-lg w-100 mb-2" disabled>
+                                    <span class="bi bi-x-circle"></span> Event Full
+                                </button>
+                            }
+
+                            <button class="btn btn-outline-primary w-100" @onclick="NavigateBack">
+                                <span class="bi bi-arrow-left"></span> Back to Events
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Event? selectedEvent;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEventDetails();
+    }
+
+    private async Task LoadEventDetails()
+    {
+        isLoading = true;
+        selectedEvent = await EventService.GetEventByIdAsync(Id);
+        isLoading = false;
+    }
+
+    private bool IsEventAvailable()
+    {
+        return selectedEvent != null && EventService.HasAvailableSpots(selectedEvent);
+    }
+
+    private int GetAvailableSpots()
+    {
+        return selectedEvent != null ? EventService.GetAvailableSpots(selectedEvent) : 0;
+    }
+
+    private double GetCapacityPercentage()
+    {
+        if (selectedEvent == null || selectedEvent.Capacity == 0) return 0;
+        return Math.Round((double)selectedEvent.RegisteredAttendees / selectedEvent.Capacity * 100, 1);
+    }
+
+    private string GetProgressBarClass()
+    {
+        var percentage = GetCapacityPercentage();
+        if (percentage >= 90) return "bg-danger";
+        if (percentage >= 70) return "bg-warning";
+        return "bg-success";
+    }
+
+    private string GetStatusBadgeClass()
+    {
+        if (!IsEventAvailable()) return "bg-danger";
+        if (GetAvailableSpots() <= selectedEvent!.Capacity * 0.1) return "bg-warning";
+        return "bg-success";
+    }
+
+    private string GetEventStatus()
+    {
+        if (!IsEventAvailable()) return "Fully Booked";
+        if (GetAvailableSpots() <= selectedEvent!.Capacity * 0.1) return "Limited Availability";
+        return "Available";
+    }
+
+    private void NavigateToRegistration()
+    {
+        NavigationManager.NavigateTo($"/register/{Id}");
+    }
+
+    private void NavigateBack()
+    {
+        NavigationManager.NavigateTo("/events");
+    }
+}

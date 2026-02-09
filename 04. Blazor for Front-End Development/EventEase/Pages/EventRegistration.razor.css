@@ -1,0 +1,251 @@
+.registration-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.breadcrumb-nav {
+    margin-bottom: 2rem;
+}
+
+.registration-container {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.registration-form-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2.5rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.registration-form-card h2 {
+    color: #333;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    padding: 0.75rem 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+}
+
+.form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.125rem;
+}
+
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.form-actions .btn {
+    flex: 1;
+    min-width: 160px;
+}
+
+.event-summary-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 2rem;
+    position: sticky;
+    top: 2rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.event-summary-card h4 {
+    color: white;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.summary-content .event-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: white;
+}
+
+.summary-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.summary-item .bi {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.summary-item small {
+    display: block;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.summary-item p {
+    margin: 0;
+    color: white;
+    font-weight: 500;
+}
+
+.success-message {
+    background: white;
+    border-radius: 12px;
+    padding: 4rem 2rem;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.success-icon {
+    font-size: 5rem;
+    color: #28a745;
+    margin-bottom: 1.5rem;
+}
+
+.success-message h2 {
+    color: #333;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.success-message .lead {
+    color: #666;
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.success-details {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 2rem auto;
+    max-width: 500px;
+    text-align: left;
+}
+
+.success-details p {
+    margin-bottom: 0.75rem;
+    color: #555;
+}
+
+.success-details p:last-child {
+    margin-bottom: 0;
+}
+
+.confirmation-note {
+    color: #666;
+    margin: 2rem 0;
+    font-size: 1rem;
+}
+
+.success-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+}
+
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 1rem;
+}
+
+.loading-spinner p {
+    margin-top: 1rem;
+    color: #666;
+}
+
+.validation-message {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+@media (max-width: 992px) {
+    .event-summary-card {
+        position: static;
+        margin-top: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .registration-page {
+        padding: 1rem 0.5rem;
+    }
+
+    .registration-form-card {
+        padding: 1.5rem;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+
+    .success-message {
+        padding: 2rem 1rem;
+    }
+
+    .success-icon {
+        font-size: 3.5rem;
+    }
+
+    .success-actions {
+        flex-direction: column;
+    }
+
+    .success-actions .btn {
+        width: 100%;
+    }
+}

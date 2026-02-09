@@ -1,0 +1,77 @@
+@page "/events"
+@using EventEase.Models
+@using EventEase.Services
+@inject EventService EventService
+
+<PageTitle>Events - EventEase</PageTitle>
+
+<div class="events-page">
+    <div class="page-header">
+        <h1>Upcoming Events</h1>
+        <p class="lead">Browse and register for exciting events managed by EventEase</p>
+    </div>
+
+    @if (events == null)
+    {
+        <div class="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading events...</span>
+            </div>
+            <p>Loading events...</p>
+        </div>
+    }
+    else if (!events.Any())
+    {
+        <div class="alert alert-info">
+            <h4>No Events Available</h4>
+            <p>There are currently no upcoming events. Please check back later!</p>
+        </div>
+    }
+    else
+    {
+        <div class="events-filter">
+            <div class="row align-items-center mb-4">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="Search events..." 
+                           @bind="searchTerm" @bind:event="oninput" />
+                </div>
+                <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                    <span class="text-muted">Showing @filteredEvents.Count of @events.Count events</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="events-grid">
+            @foreach (var evt in filteredEvents)
+            {
+                <EventCard Event="@evt" ShowRegisterButton="true" />
+            }
+        </div>
+
+        @if (!filteredEvents.Any() && !string.IsNullOrEmpty(searchTerm))
+        {
+            <div class="alert alert-warning">
+                <h4>No Results Found</h4>
+                <p>No events match your search term "<strong>@searchTerm</strong>". Please try a different search.</p>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<Event>? events;
+    private string searchTerm = string.Empty;
+
+    private List<Event> filteredEvents => string.IsNullOrWhiteSpace(searchTerm)
+        ? events ?? new List<Event>()
+        : events?.Where(e =>
+            e.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            e.Location.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+            e.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+        ).ToList() ?? new List<Event>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        events = await EventService.GetEventsAsync();
+    }
+}
