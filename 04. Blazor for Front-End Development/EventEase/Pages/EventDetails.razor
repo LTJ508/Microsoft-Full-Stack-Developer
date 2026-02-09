@@ -7,11 +7,11 @@
 <PageTitle>@(selectedEvent?.Name ?? "Event Details") - EventEase</PageTitle>
 
 <div class="event-details-page">
-    @if (selectedEvent == null && !isLoading)
+    @if (!string.IsNullOrEmpty(errorMessage) || (selectedEvent == null && !isLoading))
     {
         <div class="alert alert-danger">
-            <h4>Event Not Found</h4>
-            <p>The event you're looking for doesn't exist or has been removed.</p>
+            <h4><span class="bi bi-exclamation-triangle me-2"></span>Event Not Found</h4>
+            <p>@(errorMessage ?? "The event you're looking for doesn't exist or has been removed.")</p>
             <a href="/events" class="btn btn-primary">Back to Events</a>
         </div>
     }
@@ -151,22 +151,65 @@
 
     private Event? selectedEvent;
     private bool isLoading = true;
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadEventDetails();
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        // Reload when route parameters change
+        if (Id > 0)
+        {
+            await LoadEventDetails();
+        }
+    }
+
     private async Task LoadEventDetails()
     {
         isLoading = true;
-        selectedEvent = await EventService.GetEventByIdAsync(Id);
-        isLoading = false;
+        errorMessage = null;
+        
+        try
+        {
+            // Validate ID
+            if (Id <= 0)
+            {
+                errorMessage = "Invalid event ID provided.";
+                selectedEvent = null;
+                return;
+            }
+
+            selectedEvent = await EventService.GetEventByIdAsync(Id);
+            
+            if (selectedEvent == null)
+            {
+                errorMessage = $"Event with ID {Id} was not found.";
+            }
+            else if (!selectedEvent.IsValid())
+            {
+                errorMessage = "Event data is invalid or corrupted.";
+                selectedEvent = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred while loading event details: {ex.Message}";
+            selectedEvent = null;
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private bool IsEventAvailable()
     {
-        return selectedEvent != null && EventService.HasAvailableSpots(selectedEvent);
+        return selectedEvent != null && 
+               EventService.HasAvailableSpots(selectedEvent) && 
+               !selectedEvent.IsPastEvent();
     }
 
     private int GetAvailableSpots()
@@ -190,6 +233,7 @@
 
     private string GetStatusBadgeClass()
     {
+        if (selectedEvent?.IsPastEvent() == true) return "bg-secondary";
         if (!IsEventAvailable()) return "bg-danger";
         if (GetAvailableSpots() <= selectedEvent!.Capacity * 0.1) return "bg-warning";
         return "bg-success";
@@ -197,6 +241,7 @@
 
     private string GetEventStatus()
     {
+        if (selectedEvent?.IsPastEvent() == true) return "Event Ended";
         if (!IsEventAvailable()) return "Fully Booked";
         if (GetAvailableSpots() <= selectedEvent!.Capacity * 0.1) return "Limited Availability";
         return "Available";
@@ -204,7 +249,10 @@
 
     private void NavigateToRegistration()
     {
-        NavigationManager.NavigateTo($"/register/{Id}");
+        if (selectedEvent?.Id > 0)
+        {
+            NavigationManager.NavigateTo($"/register/{selectedEvent.Id}");
+        }
     }
 
     private void NavigateBack()

@@ -11,7 +11,7 @@
         <p class="lead">Browse and register for exciting events managed by EventEase</p>
     </div>
 
-    @if (events == null)
+    @if (isLoading)
     {
         <div class="loading-spinner">
             <div class="spinner-border text-primary" role="status">
@@ -20,7 +20,15 @@
             <p>Loading events...</p>
         </div>
     }
-    else if (!events.Any())
+    else if (errorMessage != null)
+    {
+        <div class="alert alert-danger">
+            <h4><span class="bi bi-exclamation-triangle me-2"></span>Error Loading Events</h4>
+            <p>@errorMessage</p>
+            <button class="btn btn-primary" @onclick="LoadEvents">Retry</button>
+        </div>
+    }
+    else if (events == null || !events.Any())
     {
         <div class="alert alert-info">
             <h4>No Events Available</h4>
@@ -32,27 +40,69 @@
         <div class="events-filter">
             <div class="row align-items-center mb-4">
                 <div class="col-md-6">
-                    <input type="text" class="form-control" placeholder="Search events..." 
-                           @bind="searchTerm" @bind:event="oninput" />
+                    <input type="text" 
+                           class="form-control" 
+                           placeholder="Search events..." 
+                           value="@searchTerm"
+                           @oninput="OnSearchInput" />
                 </div>
-                <div class="col-md-6 text-md-end mt-2 mt-md-0">
-                    <span class="text-muted">Showing @filteredEvents.Count of @events.Count events</span>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="sortOrder" @bind:after="ApplyFilters">
+                        <option value="date">Sort by Date</option>
+                        <option value="name">Sort by Name</option>
+                        <option value="availability">Sort by Availability</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-md-end mt-2 mt-md-0">
+                    <span class="text-muted">Showing @displayedEvents.Count of @events.Count events</span>
                 </div>
             </div>
         </div>
 
-        <div class="events-grid">
-            @foreach (var evt in filteredEvents)
-            {
-                <EventCard Event="@evt" ShowRegisterButton="true" />
-            }
-        </div>
+        @if (displayedEvents.Any())
+        {
+            <div class="events-grid">
+                @foreach (var evt in paginatedEvents)
+                {
+                    <EventCard Event="@evt" ShowRegisterButton="true" @key="evt.Id" />
+                }
+            </div>
 
-        @if (!filteredEvents.Any() && !string.IsNullOrEmpty(searchTerm))
+            @if (totalPages > 1)
+            {
+                <nav aria-label="Event list pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => GoToPage(currentPage - 1)" disabled="@(currentPage == 1)">
+                                <span class="bi bi-chevron-left"></span> Previous
+                            </button>
+                        </li>
+
+                        @for (int i = GetStartPage(); i <= GetEndPage(); i++)
+                        {
+                            int pageNumber = i;
+                            <li class="page-item @(currentPage == pageNumber ? "active" : "")">
+                                <button class="page-link" @onclick="() => GoToPage(pageNumber)">
+                                    @pageNumber
+                                </button>
+                            </li>
+                        }
+
+                        <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => GoToPage(currentPage + 1)" disabled="@(currentPage == totalPages)">
+                                Next <span class="bi bi-chevron-right"></span>
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             <div class="alert alert-warning">
                 <h4>No Results Found</h4>
                 <p>No events match your search term "<strong>@searchTerm</strong>". Please try a different search.</p>
+                <button class="btn btn-primary" @onclick="ClearSearch">Clear Search</button>
             </div>
         }
     }
@@ -60,18 +110,139 @@
 
 @code {
     private List<Event>? events;
+    private List<Event> displayedEvents = new();
+    private List<Event> paginatedEvents = new();
     private string searchTerm = string.Empty;
+    private string sortOrder = "date";
+    private bool isLoading = true;
+    private string? errorMessage;
 
-    private List<Event> filteredEvents => string.IsNullOrWhiteSpace(searchTerm)
-        ? events ?? new List<Event>()
-        : events?.Where(e =>
-            e.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-            e.Location.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-            e.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
-        ).ToList() ?? new List<Event>();
+    // Pagination
+    private int currentPage = 1;
+    private const int pageSize = 6;
+    private int totalPages => (int)Math.Ceiling((double)displayedEvents.Count / pageSize);
 
     protected override async Task OnInitializedAsync()
     {
-        events = await EventService.GetEventsAsync();
+        await LoadEvents();
+    }
+
+    protected override bool ShouldRender()
+    {
+        // Optimize rendering - only re-render when necessary
+        return true;
+    }
+
+    private async Task LoadEvents()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            events = await EventService.GetEventsAsync();
+            
+            if (events == null)
+            {
+                events = new List<Event>();
+                errorMessage = "No events could be loaded.";
+            }
+            else
+            {
+                // Validate all events
+                events = events.Where(e => e != null && e.IsValid()).ToList();
+            }
+
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred while loading events: {ex.Message}";
+            events = new List<Event>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        currentPage = 1; // Reset to first page
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        if (events == null)
+        {
+            displayedEvents = new List<Event>();
+            paginatedEvents = new List<Event>();
+            return;
+        }
+
+        // Apply search filter
+        var filtered = string.IsNullOrWhiteSpace(searchTerm)
+            ? events.ToList()
+            : events.Where(e =>
+                (e.Name?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (e.Location?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (e.Description?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)
+            ).ToList();
+
+        // Apply sorting
+        displayedEvents = sortOrder switch
+        {
+            "name" => filtered.OrderBy(e => e.Name).ToList(),
+            "availability" => filtered.OrderByDescending(e => e.Capacity - e.RegisteredAttendees).ToList(),
+            _ => filtered.OrderBy(e => e.Date).ToList()
+        };
+
+        // Apply pagination
+        UpdatePaginatedEvents();
+    }
+
+    private void UpdatePaginatedEvents()
+    {
+        var skip = (currentPage - 1) * pageSize;
+        paginatedEvents = displayedEvents.Skip(skip).Take(pageSize).ToList();
+    }
+
+    private void GoToPage(int page)
+    {
+        if (page < 1 || page > totalPages) return;
+        
+        currentPage = page;
+        UpdatePaginatedEvents();
+        StateHasChanged();
+    }
+
+    private int GetStartPage()
+    {
+        const int maxPagesToShow = 5;
+        int start = Math.Max(1, currentPage - maxPagesToShow / 2);
+        int end = Math.Min(totalPages, start + maxPagesToShow - 1);
+        
+        if (end - start < maxPagesToShow - 1)
+        {
+            start = Math.Max(1, end - maxPagesToShow + 1);
+        }
+        
+        return start;
+    }
+
+    private int GetEndPage()
+    {
+        const int maxPagesToShow = 5;
+        int start = GetStartPage();
+        return Math.Min(totalPages, start + maxPagesToShow - 1);
+    }
+
+    private void ClearSearch()
+    {
+        searchTerm = string.Empty;
+        currentPage = 1;
+        ApplyFilters();
     }
 }

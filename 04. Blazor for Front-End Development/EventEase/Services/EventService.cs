@@ -70,34 +70,127 @@ namespace EventEase.Services
 
         public Task<List<Event>> GetEventsAsync()
         {
-            return Task.FromResult(events);
+            try
+            {
+                // Return a defensive copy to prevent external modifications
+                var eventsCopy = events.Select(e => e).ToList();
+                return Task.FromResult(eventsCopy);
+            }
+            catch (Exception ex)
+            {
+                // Log error in production
+                Console.WriteLine($"Error retrieving events: {ex.Message}");
+                return Task.FromResult(new List<Event>());
+            }
         }
 
         public Task<Event?> GetEventByIdAsync(int id)
         {
-            var evt = events.FirstOrDefault(e => e.Id == id);
-            return Task.FromResult(evt);
+            try
+            {
+                if (id <= 0)
+                {
+                    return Task.FromResult<Event?>(null);
+                }
+
+                var evt = events.FirstOrDefault(e => e != null && e.Id == id);
+                return Task.FromResult(evt);
+            }
+            catch (Exception ex)
+            {
+                // Log error in production
+                Console.WriteLine($"Error retrieving event {id}: {ex.Message}");
+                return Task.FromResult<Event?>(null);
+            }
         }
 
         public Task<bool> RegisterForEventAsync(int eventId, string attendeeName, string attendeeEmail)
         {
-            var evt = events.FirstOrDefault(e => e.Id == eventId);
-            if (evt != null && evt.RegisteredAttendees < evt.Capacity)
+            try
             {
+                // Validate inputs
+                if (eventId <= 0)
+                {
+                    throw new ArgumentException("Invalid event ID", nameof(eventId));
+                }
+
+                if (string.IsNullOrWhiteSpace(attendeeName))
+                {
+                    throw new ArgumentException("Attendee name is required", nameof(attendeeName));
+                }
+
+                if (string.IsNullOrWhiteSpace(attendeeEmail))
+                {
+                    throw new ArgumentException("Attendee email is required", nameof(attendeeEmail));
+                }
+
+                // Validate email format (basic)
+                if (!attendeeEmail.Contains("@") || !attendeeEmail.Contains("."))
+                {
+                    throw new ArgumentException("Invalid email format", nameof(attendeeEmail));
+                }
+
+                var evt = events.FirstOrDefault(e => e != null && e.Id == eventId);
+                
+                if (evt == null)
+                {
+                    throw new InvalidOperationException($"Event with ID {eventId} not found");
+                }
+
+                if (!evt.IsValid())
+                {
+                    throw new InvalidOperationException("Event data is invalid");
+                }
+
+                if (evt.IsPastEvent())
+                {
+                    throw new InvalidOperationException("Cannot register for past events");
+                }
+
+                if (evt.RegisteredAttendees >= evt.Capacity)
+                {
+                    throw new InvalidOperationException("Event is at full capacity");
+                }
+
                 evt.RegisteredAttendees++;
                 return Task.FromResult(true);
             }
-            return Task.FromResult(false);
+            catch (ArgumentException)
+            {
+                // Re-throw validation exceptions
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                // Re-throw business logic exceptions
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Log unexpected errors
+                Console.WriteLine($"Unexpected error during registration: {ex.Message}");
+                return Task.FromResult(false);
+            }
         }
 
         public bool HasAvailableSpots(Event evt)
         {
-            return evt.RegisteredAttendees < evt.Capacity;
+            if (evt == null || !evt.IsValid())
+            {
+                return false;
+            }
+
+            return evt.RegisteredAttendees < evt.Capacity && !evt.IsPastEvent();
         }
 
         public int GetAvailableSpots(Event evt)
         {
-            return evt.Capacity - evt.RegisteredAttendees;
+            if (evt == null || !evt.IsValid())
+            {
+                return 0;
+            }
+
+            return Math.Max(0, evt.Capacity - evt.RegisteredAttendees);
         }
     }
 }

@@ -12,6 +12,21 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
+.event-card-error {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+}
+
+.event-card.past-event {
+    opacity: 0.7;
+    background: #f8f9fa;
+}
+
+.event-card.past-event:hover {
+    transform: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .event-card-header {
     display: flex;
     justify-content: space-between;

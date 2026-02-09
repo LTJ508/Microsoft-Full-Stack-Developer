@@ -7,11 +7,11 @@
 <PageTitle>Register - @(selectedEvent?.Name ?? "Event") - EventEase</PageTitle>
 
 <div class="registration-page">
-    @if (selectedEvent == null && !isLoading)
+    @if (!string.IsNullOrEmpty(errorLoadingMessage) || (selectedEvent == null && !isLoading))
     {
         <div class="alert alert-danger">
-            <h4>Event Not Found</h4>
-            <p>The event you're trying to register for doesn't exist or has been removed.</p>
+            <h4><span class="bi bi-exclamation-triangle me-2"></span>Event Not Found</h4>
+            <p>@(errorLoadingMessage ?? "The event you're trying to register for doesn't exist or has been removed.")</p>
             <a href="/events" class="btn btn-primary">Back to Events</a>
         </div>
     }
@@ -37,7 +37,7 @@
                 <p><strong>Time:</strong> @selectedEvent.Date.ToString("h:mm tt")</p>
                 <p><strong>Location:</strong> @selectedEvent.Location</p>
             </div>
-            <p class="confirmation-note">A confirmation email has been sent to <strong>@attendeeEmail</strong></p>
+            <p class="confirmation-note">A confirmation email has been sent to <strong>@registrationModel.Email</strong></p>
             <div class="success-actions">
                 <a href="/events" class="btn btn-primary btn-lg">Browse More Events</a>
                 <a href="/event/@Id" class="btn btn-outline-primary btn-lg">View Event Details</a>
@@ -72,56 +72,77 @@
                             </div>
                         }
 
-                        @if (!EventService.HasAvailableSpots(selectedEvent))
+                        @if (!EventService.HasAvailableSpots(selectedEvent) || selectedEvent.IsPastEvent())
                         {
                             <div class="alert alert-warning">
-                                <h4>Event is Fully Booked</h4>
-                                <p>Unfortunately, this event has reached maximum capacity. Registration is no longer available.</p>
+                                <h4>
+                                    @if (selectedEvent.IsPastEvent())
+                                    {
+                                        <span>Event Has Ended</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Event is Fully Booked</span>
+                                    }
+                                </h4>
+                                <p>
+                                    @if (selectedEvent.IsPastEvent())
+                                    {
+                                        <span>This event has already occurred. Registration is no longer available.</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Unfortunately, this event has reached maximum capacity. Registration is no longer available.</span>
+                                    }
+                                </p>
                                 <a href="/events" class="btn btn-primary">Find Other Events</a>
                             </div>
                         }
                         else
                         {
-                            <EditForm Model="@this" OnValidSubmit="HandleRegistration">
+                            <EditForm Model="@registrationModel" OnValidSubmit="HandleRegistration">
                                 <DataAnnotationsValidator />
 
                                 <div class="mb-3">
                                     <label for="fullName" class="form-label">Full Name *</label>
-                                    <InputText id="fullName" class="form-control" @bind-Value="attendeeName" placeholder="Enter your full name" />
-                                    <ValidationMessage For="@(() => attendeeName)" />
+                                    <InputText id="fullName" class="form-control" @bind-Value="registrationModel.FullName" placeholder="Enter your full name" />
+                                    <ValidationMessage For="@(() => registrationModel.FullName)" />
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="email" class="form-label">Email Address *</label>
-                                    <InputText id="email" type="email" class="form-control" @bind-Value="attendeeEmail" placeholder="your.email@example.com" />
-                                    <ValidationMessage For="@(() => attendeeEmail)" />
+                                    <InputText id="email" type="email" class="form-control" @bind-Value="registrationModel.Email" placeholder="your.email@example.com" />
+                                    <ValidationMessage For="@(() => registrationModel.Email)" />
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="phone" class="form-label">Phone Number</label>
-                                    <InputText id="phone" class="form-control" @bind-Value="attendeePhone" placeholder="(123) 456-7890" />
+                                    <InputText id="phone" class="form-control" @bind-Value="registrationModel.Phone" placeholder="(123) 456-7890" />
+                                    <ValidationMessage For="@(() => registrationModel.Phone)" />
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="company" class="form-label">Company/Organization</label>
-                                    <InputText id="company" class="form-control" @bind-Value="attendeeCompany" placeholder="Optional" />
+                                    <InputText id="company" class="form-control" @bind-Value="registrationModel.Company" placeholder="Optional" />
+                                    <ValidationMessage For="@(() => registrationModel.Company)" />
                                 </div>
 
                                 <div class="mb-4">
                                     <label for="specialRequests" class="form-label">Special Requests or Dietary Restrictions</label>
-                                    <InputTextArea id="specialRequests" class="form-control" rows="3" @bind-Value="specialRequests" placeholder="Let us know if you have any special needs..." />
+                                    <InputTextArea id="specialRequests" class="form-control" rows="3" @bind-Value="registrationModel.SpecialRequests" placeholder="Let us know if you have any special needs..." />
+                                    <ValidationMessage For="@(() => registrationModel.SpecialRequests)" />
                                 </div>
 
                                 <div class="form-check mb-4">
-                                    <InputCheckbox id="agreeTerms" class="form-check-input" @bind-Value="agreeToTerms" />
+                                    <InputCheckbox id="agreeTerms" class="form-check-input" @bind-Value="registrationModel.AgreeToTerms" />
                                     <label class="form-check-label" for="agreeTerms">
                                         I agree to the event terms and conditions *
                                     </label>
-                                    <ValidationMessage For="@(() => agreeToTerms)" />
+                                    <ValidationMessage For="@(() => registrationModel.AgreeToTerms)" />
                                 </div>
 
                                 <div class="form-actions">
-                                    <button type="submit" class="btn btn-success btn-lg" disabled="@(!agreeToTerms || isSubmitting)">
+                                    <button type="submit" class="btn btn-success btn-lg" disabled="@isSubmitting">
                                         @if (isSubmitting)
                                         {
                                             <span class="spinner-border spinner-border-sm me-2" role="status"></span>
@@ -196,49 +217,123 @@
     private bool isSubmitting = false;
     private bool registrationSuccess = false;
     private string errorMessage = string.Empty;
+    private string? errorLoadingMessage;
 
-    private string attendeeName = string.Empty;
-    private string attendeeEmail = string.Empty;
-    private string attendeePhone = string.Empty;
-    private string attendeeCompany = string.Empty;
-    private string specialRequests = string.Empty;
-    private bool agreeToTerms = false;
+    private RegistrationModel registrationModel = new();
 
     protected override async Task OnInitializedAsync()
     {
         await LoadEventDetails();
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        // Reload when route parameters change
+        if (Id > 0 && !registrationSuccess)
+        {
+            await LoadEventDetails();
+        }
+    }
+
     private async Task LoadEventDetails()
     {
         isLoading = true;
-        selectedEvent = await EventService.GetEventByIdAsync(Id);
-        isLoading = false;
+        errorLoadingMessage = null;
+        
+        try
+        {
+            // Validate ID
+            if (Id <= 0)
+            {
+                errorLoadingMessage = "Invalid event ID provided.";
+                selectedEvent = null;
+                return;
+            }
+
+            selectedEvent = await EventService.GetEventByIdAsync(Id);
+            
+            if (selectedEvent == null)
+            {
+                errorLoadingMessage = $"Event with ID {Id} was not found.";
+            }
+            else if (!selectedEvent.IsValid())
+            {
+                errorLoadingMessage = "Event data is invalid or corrupted.";
+                selectedEvent = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorLoadingMessage = $"An error occurred while loading event details: {ex.Message}";
+            selectedEvent = null;
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task HandleRegistration()
     {
-        if (string.IsNullOrWhiteSpace(attendeeName) || string.IsNullOrWhiteSpace(attendeeEmail))
+        // Clear previous errors
+        errorMessage = string.Empty;
+
+        // Validate event still exists and is available
+        if (selectedEvent == null)
         {
-            errorMessage = "Please fill in all required fields.";
+            errorMessage = "Event information is not available.";
             return;
         }
 
-        if (!agreeToTerms)
+        if (!selectedEvent.IsValid())
+        {
+            errorMessage = "Event data is invalid.";
+            return;
+        }
+
+        if (selectedEvent.IsPastEvent())
+        {
+            errorMessage = "This event has already occurred. Registration is no longer available.";
+            return;
+        }
+
+        if (!EventService.HasAvailableSpots(selectedEvent))
+        {
+            errorMessage = "This event is now fully booked. Registration is no longer available.";
+            return;
+        }
+
+        // Validate form data
+        if (string.IsNullOrWhiteSpace(registrationModel.FullName))
+        {
+            errorMessage = "Please enter your full name.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(registrationModel.Email))
+        {
+            errorMessage = "Please enter your email address.";
+            return;
+        }
+
+        if (!registrationModel.AgreeToTerms)
         {
             errorMessage = "You must agree to the terms and conditions to register.";
             return;
         }
 
         isSubmitting = true;
-        errorMessage = string.Empty;
 
         try
         {
             // Simulate API delay
             await Task.Delay(1500);
 
-            var success = await EventService.RegisterForEventAsync(Id, attendeeName, attendeeEmail);
+            var success = await EventService.RegisterForEventAsync(
+                Id, 
+                registrationModel.FullName, 
+                registrationModel.Email
+            );
 
             if (success)
             {
@@ -246,12 +341,20 @@
             }
             else
             {
-                errorMessage = "Registration failed. The event may be fully booked. Please try again.";
+                errorMessage = "Registration failed. The event may be fully booked. Please try again or contact support.";
             }
+        }
+        catch (ArgumentException argEx)
+        {
+            errorMessage = $"Invalid input: {argEx.Message}";
+        }
+        catch (InvalidOperationException opEx)
+        {
+            errorMessage = $"Registration error: {opEx.Message}";
         }
         catch (Exception ex)
         {
-            errorMessage = $"An error occurred during registration: {ex.Message}";
+            errorMessage = $"An unexpected error occurred during registration. Please try again later. Error: {ex.Message}";
         }
         finally
         {
@@ -261,7 +364,14 @@
 
     private void NavigateBack()
     {
-        NavigationManager.NavigateTo($"/event/{Id}");
+        if (selectedEvent?.Id > 0)
+        {
+            NavigationManager.NavigateTo($"/event/{selectedEvent.Id}");
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/events");
+        }
     }
 
     private void ClearError()
