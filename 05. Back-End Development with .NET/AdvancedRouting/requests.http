@@ -1,0 +1,21 @@
+GET http://localhost:5177/users/10/posts/buffalo
+
+###
+
+GET http://localhost:5177/products/10
+
+###`
+
+GET http://localhost:5177/report/
+
+###`
+
+GET http://localhost:5177/files/images/cat.png
+
+###
+
+GET http://localhost:5177/search?q=dotnet&page=2
+
+###
+
+GET http://localhost:5177/store/electronics/12/sale?inStock=false
