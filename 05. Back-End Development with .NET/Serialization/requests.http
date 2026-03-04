@@ -1,0 +1,21 @@
+GET http://localhost:5033/
+
+###
+
+GET http://localhost:5033/manual-json
+
+###
+
+GET http://localhost:5033/json
+
+###
+
+GET http://localhost:5033/auto
+
+###
+
+GET http://localhost:5033/xml
+
+###
+
+GET http://localhost:5033/custom-serializer
