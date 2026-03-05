@@ -1,0 +1,120 @@
+GET http://localhost:5120
+
+###
+
+POST http://localhost:5120/auto
+Content-Type: application/json
+
+{
+  "userName": "Alice",
+  "userAge": 25
+}
+
+###
+
+POST http://localhost:5120/auto
+Content-Type: application/json
+
+{
+    "UserName": "Alice",
+    "UserAge": 25
+}
+
+###
+
+POST http://localhost:5120/json
+Content-Type: application/json
+
+{
+  "userName": "Alice",
+  "userAge": 25
+}
+
+###
+
+POST http://localhost:5120/json
+Content-Type: application/xml
+
+<Person>
+    <UserName>Frank</UserName>
+    <UserAge>50</UserAge>
+</Person>
+
+###
+
+POST http://localhost:5120/json
+Content-Type: application/json
+
+<Person>
+    <UserName>Frank</UserName>
+    <UserAge>50</UserAge>
+</Person>
+
+###
+
+POST http://localhost:5120/json
+Content-Type: application/json
+
+{
+  "userName": "Dana"
+}
+
+###
+
+POST http://localhost:5120/json
+Content-Type: application/json
+
+{
+  "UserAge": 50
+}
+
+###
+
+POST http://localhost:5120/json
+Content-Type: application/json
+
+{
+  "userName": "Alice",
+  "userAge": 25,
+  "extraField": "This field is not defined in the Person class"
+}
+
+###
+
+POST http://localhost:5120/json
+Content-Type: application/json
+
+{
+  "userName": "Alice",
+  "userAge": "hii"
+}
+
+###
+
+POST http://localhost:5120/custom-options
+Content-Type: application/json
+
+{
+  "userName": "Alice",
+  "userAge": 25,
+  "extraField": "This field is not defined in the Person class"
+}
+
+###
+
+POST http://localhost:5120/xml
+Content-Type: application/json
+{
+  "UserName": "Alice",
+  "UserAge": 25
+}
+
+###
+
+POST http://localhost:5120/xml
+Content-Type: application/xml
+
+<Person>
+    <UserName>Frank</UserName>
+    <UserAge>50</UserAge>
+</Person>
