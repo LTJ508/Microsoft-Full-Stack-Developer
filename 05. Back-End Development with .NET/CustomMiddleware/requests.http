@@ -1,0 +1,44 @@
+GET http://localhost:5280/
+
+###
+
+GET http://localhost:5280/blogs
+
+###
+
+GET http://localhost:5280/blogs/1
+
+###
+
+POST http://localhost:5280/blogs
+Content-Type: application/json
+
+{
+  "title": "My Third Blog",
+  "body": "This is my third post."
+}
+
+###
+
+POST http://localhost:5280/blogs
+Content-Type: application/json
+X-API-Key: thisIsABadPassword
+
+{
+  "title": "My Third Blog",
+  "body": "This is my third post."
+}
+
+###
+
+DELETE http://localhost:5280/blogs/1
+
+###
+
+PUT http://localhost:5280/blogs/0
+Content-Type: application/json
+
+{
+  "title": "My Updated Third Blog",
+  "body": "This is my updated third post."
+}
