@@ -5,6 +5,19 @@ builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
 
+// ── Middleware pipeline (order matters) ───────────────────────────────────────
+// 1. Error-handling — outermost layer, catches any unhandled exception and
+//    returns a consistent JSON error response instead of a raw 500 page.
+app.UseMiddleware<ErrorHandlingMiddleware>();
+
+// 2. Authentication — validates the Bearer token on every request before
+//    any endpoint logic runs; rejects invalid/missing tokens with 401.
+app.UseMiddleware<AuthenticationMiddleware>();
+
+// 3. Logging — records the HTTP method, path, and final response status code
+//    for auditing purposes (runs after auth so only authorised traffic is logged).
+app.UseMiddleware<LoggingMiddleware>();
+
 // ── In-memory store ──────────────────────────────────────────────────────────
 var users = new Dictionary<int, User>
 {
@@ -14,8 +27,6 @@ var users = new Dictionary<int, User>
 int nextId = 3;
 
 // ── Validation helper ────────────────────────────────────────────────────────
-// BUG FIX: centralised validation prevents invalid data from ever reaching
-// the store and returns descriptive 400 messages instead of crashing.
 static bool IsValidEmail(string? email) =>
     !string.IsNullOrWhiteSpace(email) &&
     Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
@@ -33,8 +44,6 @@ static List<string> Validate(UserRequest? req)
 // ── Endpoints ────────────────────────────────────────────────────────────────
 
 // GET /users — retrieve all users
-// BUG FIX: snapshot to List so serialisation is stable and not tied to the
-// live dictionary reference; wrapped in try-catch for unexpected failures.
 app.MapGet("/users", () =>
 {
     try
@@ -48,7 +57,6 @@ app.MapGet("/users", () =>
 });
 
 // GET /users/{id} — retrieve a specific user
-// BUG FIX: returns a clear 404 with a message instead of throwing KeyNotFoundException.
 app.MapGet("/users/{id:int}", (int id) =>
 {
     try
@@ -64,7 +72,6 @@ app.MapGet("/users/{id:int}", (int id) =>
 });
 
 // POST /users — create a new user
-// BUG FIX: validates input, rejects duplicate emails, and handles exceptions.
 app.MapPost("/users", (UserRequest? req) =>
 {
     try
@@ -73,7 +80,6 @@ app.MapPost("/users", (UserRequest? req) =>
         if (errors.Count > 0)
             return Results.BadRequest(new { errors });
 
-        // Prevent duplicate email addresses (case-insensitive).
         if (users.Values.Any(u => string.Equals(u.Email, req!.Email, StringComparison.OrdinalIgnoreCase)))
             return Results.Conflict(new { message = $"A user with email '{req!.Email}' already exists." });
 
@@ -93,7 +99,6 @@ app.MapPost("/users", (UserRequest? req) =>
 });
 
 // PUT /users/{id} — update an existing user
-// BUG FIX: validates input, checks 404, prevents email collision with other users.
 app.MapPut("/users/{id:int}", (int id, UserRequest? req) =>
 {
     try
@@ -105,7 +110,6 @@ app.MapPut("/users/{id:int}", (int id, UserRequest? req) =>
         if (!users.ContainsKey(id))
             return Results.NotFound(new { message = $"User with ID {id} was not found." });
 
-        // Allow the same email for the same user but block collision with others.
         if (users.Values.Any(u => u.Id != id &&
                 string.Equals(u.Email, req!.Email, StringComparison.OrdinalIgnoreCase)))
             return Results.Conflict(new { message = $"Another user with email '{req!.Email}' already exists." });
@@ -144,7 +148,87 @@ app.Run();
 
 // ── Models ───────────────────────────────────────────────────────────────────
 record User(int Id, string Name, string Email, string Department);
-
-// BUG FIX: fields are nullable so that missing JSON properties are caught by
-// Validate() and return a 400, rather than causing an unhandled exception.
 record UserRequest(string? Name, string? Email, string? Department);
+
+// ── Middleware implementations ────────────────────────────────────────────────
+
+/// <summary>
+/// Middleware 1 — Error handling.
+/// Registered first (outermost) so it wraps the entire pipeline.
+/// Catches any unhandled exception and returns a uniform JSON error response
+/// so callers never receive a raw HTML 500 page.
+/// </summary>
+class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger)
+{
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
+        {
+            await next(context);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unhandled exception for {Method} {Path}",
+                context.Request.Method, context.Request.Path);
+
+            // Only write the error response if headers haven't been sent yet.
+            if (!context.Response.HasStarted)
+            {
+                context.Response.StatusCode  = StatusCodes.Status500InternalServerError;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new { error = "Internal server error." });
+            }
+        }
+    }
+}
+
+/// <summary>
+/// Middleware 2 — Token-based authentication.
+/// Reads the Authorization header and validates a static Bearer token
+/// stored in appsettings.json under Auth:Token.
+/// Returns 401 Unauthorized for missing or invalid tokens.
+/// </summary>
+class AuthenticationMiddleware(RequestDelegate next, IConfiguration config)
+{
+    private const string BearerPrefix = "Bearer ";
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        var validToken = config["Auth:Token"];
+        var authHeader  = context.Request.Headers.Authorization.ToString();
+
+        bool hasValidToken =
+            authHeader.StartsWith(BearerPrefix, StringComparison.OrdinalIgnoreCase) &&
+            authHeader[BearerPrefix.Length..] == validToken;
+
+        if (!hasValidToken)
+        {
+            context.Response.StatusCode  = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(
+                new { error = "Unauthorized. Provide a valid Bearer token in the Authorization header." });
+            return;
+        }
+
+        await next(context);
+    }
+}
+
+/// <summary>
+/// Middleware 3 — Request/response logging.
+/// Registered last (innermost) so it logs only requests that have passed
+/// authentication. Records the HTTP method, path, and response status code.
+/// </summary>
+class LoggingMiddleware(RequestDelegate next, ILogger<LoggingMiddleware> logger)
+{
+    public async Task InvokeAsync(HttpContext context)
+    {
+        logger.LogInformation("→ REQUEST   {Method} {Path}",
+            context.Request.Method, context.Request.Path);
+
+        await next(context);
+
+        logger.LogInformation("← RESPONSE  {Method} {Path} [{StatusCode}]",
+            context.Request.Method, context.Request.Path, context.Response.StatusCode);
+    }
+}

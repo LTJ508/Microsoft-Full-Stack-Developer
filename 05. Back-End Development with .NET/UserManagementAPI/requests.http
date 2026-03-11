@@ -1,10 +1,277 @@
-@baseUrl = http://localhost:5098
+@baseUrl    = http://localhost:5098
+@validToken = techhive-secret-token-2026
 
 # =============================================================================
-# UserManagementAPI — HTTP test file
+# UserManagementAPI — HTTP test file (Activity 3: Middleware)
 # Run with the VS Code REST Client extension.
-# Tests are grouped by endpoint and cover happy paths + all bug-fix scenarios.
+#
+# Valid token:  {{validToken}}
+# All endpoints now require:  Authorization: Bearer {{validToken}}
+#
+# Middleware pipeline order:
+#   1. ErrorHandlingMiddleware  (outermost) — unhandled exceptions → 500 JSON
+#   2. AuthenticationMiddleware             — invalid/missing token → 401 JSON
+#   3. LoggingMiddleware        (innermost) — logs method + path + status code
 # =============================================================================
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AUTHENTICATION MIDDLEWARE — tests for 401 responses
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [AUTH — 401] No Authorization header at all (expect 401)
+GET {{baseUrl}}/users
+Accept: application/json
+
+###
+
+### [AUTH — 401] Wrong token value (expect 401)
+GET {{baseUrl}}/users
+Authorization: Bearer wrong-token-value
+Accept: application/json
+
+###
+
+### [AUTH — 401] Malformed header — missing "Bearer " prefix (expect 401)
+GET {{baseUrl}}/users
+Authorization: {{validToken}}
+Accept: application/json
+
+###
+
+### [AUTH — 401] POST without token — blocked before reaching any endpoint (expect 401)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "Blocked User",
+  "email": "blocked@techhive.com",
+  "department": "IT"
+}
+
+###
+
+### [AUTH — 401] DELETE without token (expect 401)
+DELETE {{baseUrl}}/users/2
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GET /users — retrieve all users
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [HAPPY] Get all users — valid token (expect 200, logging visible in console)
+GET {{baseUrl}}/users
+Authorization: Bearer {{validToken}}
+Accept: application/json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GET /users/{id} — retrieve a specific user
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [HAPPY] Get existing user ID 1 (expect 200)
+GET {{baseUrl}}/users/1
+Authorization: Bearer {{validToken}}
+Accept: application/json
+
+###
+
+### [HAPPY] Get existing user ID 2 (expect 200)
+GET {{baseUrl}}/users/2
+Authorization: Bearer {{validToken}}
+Accept: application/json
+
+###
+
+### [404] Get non-existent user (expect 404 with message)
+GET {{baseUrl}}/users/999
+Authorization: Bearer {{validToken}}
+Accept: application/json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# POST /users — create a new user
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [HAPPY] Create a valid user (expect 201)
+POST {{baseUrl}}/users
+Authorization: Bearer {{validToken}}
+Content-Type: application/json
+
+{
+  "name": "Carol White",
+  "email": "carol@techhive.com",
+  "department": "Finance"
+}
+
+###
+
+### [400] Missing name field (expect 400 with validation errors)
+POST {{baseUrl}}/users
+Authorization: Bearer {{validToken}}
+Content-Type: application/json
+
+{
+  "name": "",
+  "email": "noname@techhive.com",
+  "department": "IT"
+}
+
+###
+
+### [400] Invalid email format (expect 400 with validation error)
+POST {{baseUrl}}/users
+Authorization: Bearer {{validToken}}
+Content-Type: application/json
+
+{
+  "name": "Dave Brown",
+  "email": "not-an-email",
+  "department": "IT"
+}
+
+###
+
+### [400] Multiple validation errors at once (expect 400 with error list)
+POST {{baseUrl}}/users
+Authorization: Bearer {{validToken}}
+Content-Type: application/json
+
+{
+  "name": "",
+  "email": "bad-email",
+  "department": ""
+}
+
+###
+
+### [409] Duplicate email — alice already exists (expect 409 Conflict)
+POST {{baseUrl}}/users
+Authorization: Bearer {{validToken}}
+Content-Type: application/json
+
+{
+  "name": "Alice Copy",
+  "email": "alice@techhive.com",
+  "department": "HR"
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PUT /users/{id} — update an existing user
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [HAPPY] Update user ID 1 with valid data (expect 200)
+PUT {{baseUrl}}/users/1
+Authorization: Bearer {{validToken}}
+Content-Type: application/json
+
+{
+  "name": "Alice Johnson",
+  "email": "alice.johnson@techhive.com",
+  "department": "HR"
+}
+
+###
+
+### [HAPPY] Update user with their own email — no false collision (expect 200)
+PUT {{baseUrl}}/users/2
+Authorization: Bearer {{validToken}}
+Content-Type: application/json
+
+{
+  "name": "Bob Smith",
+  "email": "bob@techhive.com",
+  "department": "IT Operations"
+}
+
+###
+
+### [404] Update non-existent user (expect 404)
+PUT {{baseUrl}}/users/999
+Authorization: Bearer {{validToken}}
+Content-Type: application/json
+
+{
+  "name": "Ghost User",
+  "email": "ghost@techhive.com",
+  "department": "Unknown"
+}
+
+###
+
+### [400] Update with invalid email (expect 400)
+PUT {{baseUrl}}/users/1
+Authorization: Bearer {{validToken}}
+Content-Type: application/json
+
+{
+  "name": "Alice Johnson",
+  "email": "not-valid",
+  "department": "HR"
+}
+
+###
+
+### [409] Update user ID 1 using Bob's email (expect 409 Conflict)
+PUT {{baseUrl}}/users/1
+Authorization: Bearer {{validToken}}
+Content-Type: application/json
+
+{
+  "name": "Alice Johnson",
+  "email": "bob@techhive.com",
+  "department": "HR"
+}
+
+###
+
+### [AUTH — 401] PUT without token (expect 401)
+PUT {{baseUrl}}/users/1
+Content-Type: application/json
+
+{
+  "name": "Alice Johnson",
+  "email": "alice@techhive.com",
+  "department": "HR"
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DELETE /users/{id}
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [HAPPY] Delete existing user ID 2 (expect 204 No Content)
+DELETE {{baseUrl}}/users/2
+Authorization: Bearer {{validToken}}
+
+###
+
+### [404] Delete non-existent user (expect 404)
+DELETE {{baseUrl}}/users/999
+Authorization: Bearer {{validToken}}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ERROR-HANDLING MIDDLEWARE — global exception safety net
+# Any unhandled exception in the pipeline is caught and returned as:
+#   { "error": "Internal server error." }
+# The request below hits an unknown route; the framework returns 404 cleanly
+# (no crash), confirming the error-handling wrapper is in place.
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [ERROR HANDLER] Unknown route — confirms no unhandled exception escapes (expect 404)
+GET {{baseUrl}}/does-not-exist
+Authorization: Bearer {{validToken}}
+Accept: application/json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LOGGING MIDDLEWARE — verify in the dotnet run console output that entries
+# appear for every authenticated request, e.g.:
+#   info: LoggingMiddleware → REQUEST   GET /users
+#   info: LoggingMiddleware ← RESPONSE  GET /users [200]
+# Unauthenticated requests are blocked before reaching the logging middleware
+# and therefore do NOT produce log entries.
+# ─────────────────────────────────────────────────────────────────────────────
+
+### Final state — get all users to verify store after all modifications above
+GET {{baseUrl}}/users
+Authorization: Bearer {{validToken}}
+Accept: application/json
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # GET /users — retrieve all users
