@@ -1,0 +1,56 @@
+@baseUrl = http://localhost:5098
+
+### Check API health
+GET {{baseUrl}}/
+
+### GET all users
+GET {{baseUrl}}/users
+Accept: application/json
+
+### GET a specific user by ID (existing)
+GET {{baseUrl}}/users/1
+Accept: application/json
+
+### GET a user that does not exist
+GET {{baseUrl}}/users/999
+Accept: application/json
+
+### POST — create a new user
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "Carol White",
+  "email": "carol@techhive.com",
+  "department": "Finance"
+}
+
+### PUT — update an existing user (ID 1)
+PUT {{baseUrl}}/users/1
+Content-Type: application/json
+
+{
+  "name": "Alice Johnson",
+  "email": "alice.johnson@techhive.com",
+  "department": "HR"
+}
+
+### PUT — update a user that does not exist
+PUT {{baseUrl}}/users/999
+Content-Type: application/json
+
+{
+  "name": "Ghost User",
+  "email": "ghost@techhive.com",
+  "department": "Unknown"
+}
+
+### DELETE — remove a user (ID 2)
+DELETE {{baseUrl}}/users/2
+
+### DELETE — remove a user that does not exist
+DELETE {{baseUrl}}/users/999
+
+### GET all users after modifications (verify state)
+GET {{baseUrl}}/users
+Accept: application/json
