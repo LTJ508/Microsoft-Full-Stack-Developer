@@ -1,21 +1,40 @@
 @baseUrl = http://localhost:5098
 
-### Check API health
-GET {{baseUrl}}/
+# =============================================================================
+# UserManagementAPI — HTTP test file
+# Run with the VS Code REST Client extension.
+# Tests are grouped by endpoint and cover happy paths + all bug-fix scenarios.
+# =============================================================================
 
-### GET all users
+# ─────────────────────────────────────────────────────────────────────────────
+# GET /users — retrieve all users
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [HAPPY] Get all users (expect 200 with 2 seed users)
 GET {{baseUrl}}/users
 Accept: application/json
 
-### GET a specific user by ID (existing)
+# ─────────────────────────────────────────────────────────────────────────────
+# GET /users/{id} — retrieve a specific user
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [HAPPY] Get existing user ID 1 (expect 200)
 GET {{baseUrl}}/users/1
 Accept: application/json
 
-### GET a user that does not exist
+### [HAPPY] Get existing user ID 2 (expect 200)
+GET {{baseUrl}}/users/2
+Accept: application/json
+
+### [BUG FIX — 404] Get non-existent user (expect 404 with descriptive message)
 GET {{baseUrl}}/users/999
 Accept: application/json
 
-### POST — create a new user
+# ─────────────────────────────────────────────────────────────────────────────
+# POST /users — create a new user
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [HAPPY] Create a valid user (expect 201)
 POST {{baseUrl}}/users
 Content-Type: application/json
 
@@ -25,7 +44,79 @@ Content-Type: application/json
   "department": "Finance"
 }
 
-### PUT — update an existing user (ID 1)
+###
+
+### [BUG FIX — 400] Missing name field (expect 400 with validation error)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "",
+  "email": "noname@techhive.com",
+  "department": "IT"
+}
+
+###
+
+### [BUG FIX — 400] Invalid email format (expect 400 with validation error)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "Dave Brown",
+  "email": "not-an-email",
+  "department": "IT"
+}
+
+###
+
+### [BUG FIX — 400] Missing department (expect 400 with validation error)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "Eve Davis",
+  "email": "eve@techhive.com",
+  "department": ""
+}
+
+###
+
+### [BUG FIX — 400] Empty request body (expect 400 — body is required)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{}
+
+###
+
+### [BUG FIX — 400] Multiple validation errors at once (expect 400 with error list)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "",
+  "email": "bad-email",
+  "department": ""
+}
+
+###
+
+### [BUG FIX — 409] Duplicate email — alice already exists (expect 409 Conflict)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "Alice Copy",
+  "email": "alice@techhive.com",
+  "department": "HR"
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PUT /users/{id} — update an existing user
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [HAPPY] Update user ID 1 with valid data (expect 200)
 PUT {{baseUrl}}/users/1
 Content-Type: application/json
 
@@ -35,7 +126,21 @@ Content-Type: application/json
   "department": "HR"
 }
 
-### PUT — update a user that does not exist
+###
+
+### [HAPPY] Update user with same email (own email re-used — expect 200, not 409)
+PUT {{baseUrl}}/users/2
+Content-Type: application/json
+
+{
+  "name": "Bob Smith",
+  "email": "bob@techhive.com",
+  "department": "IT Operations"
+}
+
+###
+
+### [BUG FIX — 404] Update non-existent user (expect 404)
 PUT {{baseUrl}}/users/999
 Content-Type: application/json
 
@@ -45,12 +150,59 @@ Content-Type: application/json
   "department": "Unknown"
 }
 
-### DELETE — remove a user (ID 2)
+###
+
+### [BUG FIX — 400] Update with invalid email (expect 400)
+PUT {{baseUrl}}/users/1
+Content-Type: application/json
+
+{
+  "name": "Alice Johnson",
+  "email": "not-valid",
+  "department": "HR"
+}
+
+###
+
+### [BUG FIX — 400] Update with empty name (expect 400)
+PUT {{baseUrl}}/users/1
+Content-Type: application/json
+
+{
+  "name": "  ",
+  "email": "alice@techhive.com",
+  "department": "HR"
+}
+
+###
+
+### [BUG FIX — 409] Update user ID 1 with Bob's email (expect 409 Conflict)
+PUT {{baseUrl}}/users/1
+Content-Type: application/json
+
+{
+  "name": "Alice Johnson",
+  "email": "bob@techhive.com",
+  "department": "HR"
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DELETE /users/{id} — remove a user
+# ─────────────────────────────────────────────────────────────────────────────
+
+### [HAPPY] Delete existing user ID 2 (expect 204 No Content)
 DELETE {{baseUrl}}/users/2
 
-### DELETE — remove a user that does not exist
+###
+
+### [BUG FIX — 404] Delete non-existent user (expect 404 with message)
 DELETE {{baseUrl}}/users/999
 
-### GET all users after modifications (verify state)
+# ─────────────────────────────────────────────────────────────────────────────
+# State verification
+# ─────────────────────────────────────────────────────────────────────────────
+
+### Verify final state — get all users after all modifications
 GET {{baseUrl}}/users
 Accept: application/json
+
